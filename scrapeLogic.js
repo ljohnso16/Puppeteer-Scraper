@@ -1,15 +1,14 @@
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 require("dotenv").config();
 
 const scrapeLogic = async (res) => {
-  // Load secrets
-  let secrets;
-  try {
-    secrets = JSON.parse(fs.readFileSync(".secrets.json", "utf8"));
-  } catch (error) {
-    console.error("Error loading secrets file:", error);
-    res.send("Failed to load secrets file.");
+  // Ensure environment variables are set
+  const accountNumber = process.env.ACCOUNT_NUMBER;
+  const password = process.env.PASSWORD;
+
+  if (!accountNumber || !password) {
+    console.error("Environment variables ACCOUNT_NUMBER and PASSWORD are required.");
+    res.send("Environment variables ACCOUNT_NUMBER and PASSWORD are not set.");
     return;
   }
 
@@ -39,7 +38,7 @@ const scrapeLogic = async (res) => {
     await page.setViewport({ width: 1080, height: 1024 });
 
     // Wait for the first <span> element and click it
-    const firstSpanSelector = "li#be-overseas-tertiary-tab__item3-660994f6-6400-d8fc-2be8-ddcad16646c9 span";
+    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item'] span";
     await page.waitForSelector(firstSpanSelector, { timeout: 20000 });
     await page.click(firstSpanSelector);
 
@@ -64,10 +63,10 @@ const scrapeLogic = async (res) => {
     const loginButtonSelector = "#amcMemberLogin";
 
     await newPage.waitForSelector(accountNumberSelector, { timeout: 20000 });
-    await newPage.type(accountNumberSelector, secrets.accountNumber);
+    await newPage.type(accountNumberSelector, accountNumber);
 
     await newPage.waitForSelector(passwordSelector, { timeout: 20000 });
-    await newPage.type(passwordSelector, secrets.password);
+    await newPage.type(passwordSelector, password);
 
     // Wait for the submit button and click it
     await newPage.waitForSelector(loginButtonSelector, { timeout: 20000 });
