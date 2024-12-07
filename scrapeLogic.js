@@ -45,11 +45,14 @@ const scrapeLogic = async (res) => {
     // Wait for the second link to appear and click it
     const secondLinkSelector = "a[data-scclick-element='international-reserve-award_txt_flightAwardReservations'] span";
     await page.waitForSelector(secondLinkSelector, { timeout: 20000 });
-    const [newPagePromise] = browser.waitForTarget((target) => target.opener() === page.target());
     await page.click(secondLinkSelector);
 
     // Wait for the new tab to open
-    const newPage = await newPagePromise.page();
+    const target = await browser.waitForTarget(
+      (target) => target.opener() === page.target(),
+      { timeout: 60000 } // Extended timeout
+    );
+    const newPage = await target.page();
 
     // Wait for the new page to fully load
     await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
