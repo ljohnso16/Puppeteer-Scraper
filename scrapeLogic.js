@@ -17,29 +17,37 @@ const scrapeLogic = async (res) => {
   try {
     const page = await browser.newPage();
 
-    await page.goto("https://developer.chrome.com/");
+    // Navigate to the target URL
+    await page.goto("https://www.ana.co.jp/en/jp/international/");
 
-    // Set screen size
+    // Set the viewport size
     await page.setViewport({ width: 1080, height: 1024 });
 
-    // Type into search box
-    await page.type(".search-box__input", "automate beyond recorder");
+    // Wait for the first <span> element and click it
+    const firstSpanSelector = "li#be-overseas-tertiary-tab__item3-660994f6-6400-d8fc-2be8-ddcad16646c9 span";
+    await page.waitForSelector(firstSpanSelector, { timeout: 10000 });
+    await page.click(firstSpanSelector);
 
-    // Wait and click on first result
-    const searchResultSelector = ".search-box__link";
-    await page.waitForSelector(searchResultSelector);
-    await page.click(searchResultSelector);
+    // Wait for the second link to appear and click it
+    const secondLinkSelector = "a[data-scclick-element='international-reserve-award_txt_flightAwardReservations'] span";
+    await page.waitForSelector(secondLinkSelector, { timeout: 10000 });
+    const [newPagePromise] = browser.waitForTarget((target) => target.opener() === page.target());
+    await page.click(secondLinkSelector);
 
-    // Locate the full title with a unique string
-    const textSelector = await page.waitForSelector(
-      "text/Customize and automate"
-    );
-    const fullTitle = await textSelector.evaluate((el) => el.textContent);
+    // Wait for the new tab to open
+    const newPage = await newPagePromise.page();
 
-    // Print the full title
-    const logStatement = `The title of this blog post is ${fullTitle}`;
-    console.log(logStatement);
-    res.send(logStatement);
+    // Wait for the new page to fully load
+    await newPage.waitForNavigation({ waitUntil: "domcontentloaded" });
+
+    // Close the original page
+    await page.close();
+
+    // Perform actions on the new page
+    const newPageURL = newPage.url();
+    console.log(`Navigated to new page: ${newPageURL}`);
+
+    res.send(`Successfully navigated to the new page: ${newPageURL}`);
   } catch (e) {
     console.error(e);
     res.send(`Something went wrong while running Puppeteer: ${e}`);
