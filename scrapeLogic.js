@@ -2,7 +2,6 @@ const puppeteer = require("puppeteer");
 require("dotenv").config();
 
 const scrapeLogic = async (res) => {
-  // Ensure environment variables are set
   const accountNumber = process.env.ACCOUNT_NUMBER;
   const password = process.env.PASSWORD;
 
@@ -13,8 +12,7 @@ const scrapeLogic = async (res) => {
   }
 
   const browser = await puppeteer.launch({
-  headless: false, // Disable headless mode
-
+    headless: false, // Enable headful mode for debugging
     args: [
       "--disable-setuid-sandbox",
       "--no-sandbox",
@@ -33,7 +31,9 @@ const scrapeLogic = async (res) => {
     const page = await browser.newPage();
     console.log("New page created.");
 
-    // Navigate to the target URL
+    // Capture browser console logs
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
+
     console.log("Navigating to the URL: https://www.ana.co.jp/en/jp/international/");
     await page.goto("https://www.ana.co.jp/en/jp/international/", {
       waitUntil: "networkidle2",
@@ -41,25 +41,21 @@ const scrapeLogic = async (res) => {
     });
     console.log("Page loaded.");
 
-    // Set the viewport size
-    console.log("Setting viewport size.");
+    console.log("Setting viewport to 1080x1024 (original size).");
     await page.setViewport({ width: 1080, height: 1024 });
 
-    // Wait for the first <span> element and click it
-    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3-'] span";
+    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3'] span";
     console.log(`Waiting for first element: ${firstSpanSelector}`);
     await page.waitForSelector(firstSpanSelector, { timeout: 20000 });
     console.log("First element found. Clicking it...");
     await page.click(firstSpanSelector);
 
-    // Wait for the second link to appear and click it
     const secondLinkSelector = "a[data-scclick-element='international-reserve-award_txt_flightAwardReservations'] span";
     console.log(`Waiting for second element: ${secondLinkSelector}`);
     await page.waitForSelector(secondLinkSelector, { timeout: 20000 });
     console.log("Second element found. Clicking it...");
     await page.click(secondLinkSelector);
 
-    // Wait for the new tab to open
     console.log("Waiting for new tab to open...");
     const target = await browser.waitForTarget(
       (target) => target.opener() === page.target(),
@@ -68,45 +64,43 @@ const scrapeLogic = async (res) => {
     const newPage = await target.page();
     console.log("New tab opened.");
 
-    // Wait for the new page to fully load
+    // Close the old tab
+    console.log("Closing the original page...");
+    await page.close();
+    console.log("Original page closed.");
+
     console.log("Waiting for new page to load...");
     await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
-    console.log("New page loaded.");
+    console.log("DOMContentLoaded event fired.");
 
-    // Close the original page
-    console.log("Closing original page...");
-    await page.close();
+    // Ensure the page is fully rendered
+    console.log("Waiting for page to reach 'complete' ready state...");
+    await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 90000 });
+    console.log("Page fully rendered (document.readyState === 'complete').");
 
-    // Fill in the accountNumber and password fields
     const accountNumberSelector = "#accountNumber";
     const passwordSelector = "#password";
     const loginButtonSelector = "#amcMemberLogin";
 
-    console.log(`Waiting for accountNumber input field: ${accountNumberSelector}`);
+    console.log(`Waiting for account number input field: ${accountNumberSelector}`);
     await newPage.waitForSelector(accountNumberSelector, { timeout: 20000 });
-    console.log("Account number input field found. Typing account number...");
+    console.log("Typing account number...");
     await newPage.type(accountNumberSelector, accountNumber);
 
     console.log(`Waiting for password input field: ${passwordSelector}`);
     await newPage.waitForSelector(passwordSelector, { timeout: 20000 });
-    console.log("Password input field found. Typing password...");
+    console.log("Typing password...");
     await newPage.type(passwordSelector, password);
 
-    // Wait for the submit button and click it
     console.log(`Waiting for login button: ${loginButtonSelector}`);
     await newPage.waitForSelector(loginButtonSelector, { timeout: 20000 });
-    console.log("Login button found. Clicking it...");
+    console.log("Clicking login button...");
     await newPage.click(loginButtonSelector);
 
-    // Wait for the next page to fully render
-    console.log("Waiting for login to complete and new page to load...");
+    console.log("Waiting for login to complete...");
     await newPage.waitForNavigation({ waitUntil: "networkidle0", timeout: 90000 });
-    console.log("Login successful. New page loaded.");
+    console.log("Login completed.");
 
-    await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 90000 });
-    console.log("Page fully rendered.");
-
-    // Locate and click the "Multiple cities/Mixed classes" link if found
     const mixedClassesLinkSelector = "li.lastChild.deselection > a[role='tab']";
     console.log(`Searching for 'Multiple cities/Mixed classes' link: ${mixedClassesLinkSelector}`);
     const linkElement = await newPage.$(mixedClassesLinkSelector);
