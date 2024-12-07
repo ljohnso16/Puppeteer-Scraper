@@ -46,7 +46,7 @@ const scrapeLogic = async (res) => {
     await page.setViewport({ width: 1080, height: 1024 });
 
     // Wait for the first <span> element and click it
-    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item'] span";
+    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3-'] span";
     console.log(`Waiting for first element: ${firstSpanSelector}`);
     await page.waitForSelector(firstSpanSelector, { timeout: 20000 });
     console.log("First element found. Clicking it...");
