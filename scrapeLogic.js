@@ -53,7 +53,7 @@ const scrapeLogic = async (res) => {
     await page.setViewport({ width: 1080, height: 1024 });
 
     // Perform actions on the page
-    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3'] span";
+    const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3']";
     console.log(`Waiting for first element: ${firstSpanSelector}`);
     await page.waitForSelector(firstSpanSelector, { timeout: 20000 });
     console.log("First element found. Clicking it...");
