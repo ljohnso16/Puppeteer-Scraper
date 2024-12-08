@@ -4,6 +4,7 @@ const puppeteer = require("puppeteer");
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
+
 const scrapeLogic = async (res) => {
   // Fetch environment variables
   const accountNumber = process.env.ACCOUNT_NUMBER;
@@ -18,7 +19,7 @@ const scrapeLogic = async (res) => {
 
   // Puppeteer browser launch options
   const browser = await puppeteer.launch({
-    headless: TRUE, // Adjust to true if headless mode is preferred
+    headless: true, // Adjust to true if headless mode is preferred
     slowMo: 100,     // Slow down operations to make debugging easier
     args: [
       "--disable-setuid-sandbox",
@@ -58,30 +59,18 @@ const scrapeLogic = async (res) => {
     console.log("First element found. Clicking it...");
     await page.click(firstSpanSelector);
 
-    const secondLinkSelector = "a[data-scclick-element='international-reserve-award_txt_flightAwardReservations'] span";
+    const secondLinkSelector = 'a[data-scclick-element="international-reserve-award_txt_flightAwardReservations"]';
     console.log(`Waiting for second element: ${secondLinkSelector}`);
-    await page.waitForSelector(secondLinkSelector, { visible: true, timeout: 30000 });
-
-    console.log("Second element is visible. Scrolling to it...");
-    await page.evaluate(selector => {
-      const elem = document.querySelector(selector);
-      if (elem) elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, secondLinkSelector);
+    await page.waitForSelector(secondLinkSelector, { visible: true, timeout: 5000 });
 
     console.log("Clicking the second element...");
-    await page.click(secondLinkSelector);
+    const [newTabPromise] = await Promise.all([
+      new Promise(resolve => browser.once('targetcreated', target => resolve(target.page()))),
+      page.click(secondLinkSelector)
+    ]);
 
-    console.log("Waiting for new tab to open...");
-    const target = await browser.waitForTarget(
-      (target) => target.opener() === page.target(),
-      { timeout: 60000 }
-    );
-    const newPage = await target.page();
-    console.log("New tab opened.");
-
-    console.log("Closing the original page...");
-    await page.close();
-    console.log("Original page closed.");
+    const newPage = await newTabPromise;
+    console.log("Switched to new tab.");
 
     console.log("Waiting for new page to load...");
     await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
