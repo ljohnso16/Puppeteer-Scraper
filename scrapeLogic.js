@@ -13,7 +13,7 @@ const scrapeLogic = async (res) => {
 
   const browser = await puppeteer.launch({
     headless: false,
-    slowMo: 100, // Adds a 100ms delay between actions
+    slowMo: 100,
     args: [
       "--disable-setuid-sandbox",
       "--no-sandbox",
@@ -42,7 +42,7 @@ const scrapeLogic = async (res) => {
     });
     console.log("Page loaded.");
 
-    console.log("Setting viewport to 1080x1024 (original size).");
+    console.log("Setting viewport to 1080x1024.");
     await page.setViewport({ width: 1080, height: 1024 });
 
     const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3'] span";
@@ -53,8 +53,15 @@ const scrapeLogic = async (res) => {
 
     const secondLinkSelector = "a[data-scclick-element='international-reserve-award_txt_flightAwardReservations'] span";
     console.log(`Waiting for second element: ${secondLinkSelector}`);
-    await page.waitForSelector(secondLinkSelector, { timeout: 20000 });
-    console.log("Second element found. Clicking it...");
+    await page.waitForSelector(secondLinkSelector, { visible: true, timeout: 30000 });
+
+    console.log("Second element is now visible. Scrolling to it...");
+    await page.evaluate(selector => {
+      const elem = document.querySelector(selector);
+      if (elem) elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, secondLinkSelector);
+
+    console.log("Clicking the second element...");
     await page.click(secondLinkSelector);
 
     console.log("Waiting for new tab to open...");
@@ -65,19 +72,16 @@ const scrapeLogic = async (res) => {
     const newPage = await target.page();
     console.log("New tab opened.");
 
-    // Close the old tab
     console.log("Closing the original page...");
     await page.close();
     console.log("Original page closed.");
 
     console.log("Waiting for new page to load...");
     await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
-    console.log("DOMContentLoaded event fired.");
 
-    // Ensure the page is fully rendered
-    console.log("Waiting for page to reach 'complete' ready state...");
+    console.log("Ensuring page is fully loaded...");
     await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 90000 });
-    console.log("Page fully rendered (document.readyState === 'complete').");
+    console.log("Page is fully loaded.");
 
     const accountNumberSelector = "#accountNumber";
     const passwordSelector = "#password";
