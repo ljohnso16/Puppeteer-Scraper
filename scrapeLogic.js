@@ -83,12 +83,6 @@ const scrapeLogic = async (res) => {
     const passwordSelector = "#password";
     const loginButtonSelector = "#amcMemberLogin";
 
-    // Debug point: Stopping here for verification before login attempt
-    console.log("Stopping execution before login attempt.");
-    console.log("Please verify the setup and resume to proceed with the login.");
-
-    // The following login code is commented out for debugging purposes
-    /*
     console.log(`Waiting for account number input field: ${accountNumberSelector}`);
     await newPage.waitForSelector(accountNumberSelector, { timeout: 20000 });
     console.log("Typing account number...");
@@ -107,8 +101,20 @@ const scrapeLogic = async (res) => {
     console.log("Waiting for login to complete...");
     await newPage.waitForNavigation({ waitUntil: "networkidle0", timeout: 90000 });
     console.log("Login completed.");
-    */
 
+    const mixedClassesLinkSelector = "li.lastChild.deselection > a[role='tab']";
+    console.log(`Searching for 'Multiple cities/Mixed classes' link: ${mixedClassesLinkSelector}`);
+    const linkElement = await newPage.$(mixedClassesLinkSelector);
+
+    if (linkElement) {
+      console.log("Found the 'Multiple cities/Mixed classes' link. Clicking it now...");
+      await newPage.click(mixedClassesLinkSelector);
+      console.log("Clicked the 'Multiple cities/Mixed classes' link.");
+      res.send("Successfully found and clicked the 'Multiple cities/Mixed classes' link.");
+    } else {
+      console.log("Could not find the 'Multiple cities/Mixed classes' link.");
+      res.send("Could not find the 'Multiple cities/Mixed classes' link.");
+    }
   } catch (e) {
     console.error("Error during Puppeteer execution:", e);
     res.send(`Something went wrong while running Puppeteer: ${e}`);
