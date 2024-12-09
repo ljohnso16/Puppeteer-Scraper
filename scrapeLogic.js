@@ -1,5 +1,5 @@
 const puppeteer = require("puppeteer");
-//const axios = require("axios");
+const axios = require("axios");
 
 const scrapeLogic = async (res) => {
   const accountNumber = process.env.ACCOUNT_NUMBER;
@@ -14,7 +14,7 @@ const scrapeLogic = async (res) => {
   console.log("Production environment variables loaded.");
 
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: new,
     slowMo: 100,
     args: [
       "--disable-setuid-sandbox",
