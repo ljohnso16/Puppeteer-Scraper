@@ -50,7 +50,7 @@ const scrapeLogic = async (res) => {
       "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=",
       {
         waitUntil: "domcontentloaded",
-        timeout: 60000,
+        timeout: 5000,
       }
     );
 
