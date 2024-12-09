@@ -2,8 +2,17 @@ const express = require("express");
 const { scrapeLogic } = require("./scrapeLogic");
 const path = require("path");
 const app = express();
-
+ 
 const PORT = process.env.PORT || 1000;
+
+app.use((req, res, next) => {
+  if (req.path.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript');
+  } else if (req.path.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css');
+  }
+  next();
+});
 
 app.get("/favicon.ico", (req, res) => {
     console.log("Favicon requested");
