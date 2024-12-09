@@ -32,12 +32,14 @@ const scrapeLogic = async (res) => {
     console.log("Clicking second element...");
 
     const [newPage] = await Promise.all([
+      // Trigger the click and wait for the new tab to be created
       new Promise((resolve, reject) => {
         browser.once("targetcreated", async (target) => {
           try {
-            const newPage = await target.page();
-            if (newPage) {
-              resolve(newPage);
+            const page = await target.page();
+            if (page) {
+              console.log("New tab detected.");
+              resolve(page);
             } else {
               reject(new Error("Failed to find the new tab."));
             }
@@ -46,25 +48,31 @@ const scrapeLogic = async (res) => {
           }
         });
       }),
-      page.click(secondLinkSelector),
+    
+      // Click the link to open the new tab
+      (async () => {
+        console.log("Clicking the second element to open a new tab...");
+        await page.click(secondLinkSelector);
+      })(),
     ]);
     
+    // Ensure the new page is valid
     if (!newPage) {
       throw new Error("New page could not be detected.");
     }
     
-    // Bring the new page to the foreground
+    // Bring the new tab to the foreground
     console.log("Switching to new tab.");
     await newPage.bringToFront();
     
-    // Wait for the new page to fully load
+    // Wait for the new tab to load
     console.log("Waiting for new tab to load...");
     await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
-    console.log("New tab loaded.");
     
-    // Ensure page readiness
+    // Ensure the new tab is fully loaded
     await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 90000 });
     console.log("New page fully loaded.");
+    
     const logStatement = `New page fully loaded.`;
     console.log(logStatement);
     res.send(logStatement);
