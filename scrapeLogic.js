@@ -9,6 +9,15 @@ if (!fs.existsSync("screenshots")) {
 
 const scrapeLogic = async (res) => {
   try {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const sendEvent = (message) => {
+      res.write(`data: ${JSON.stringify(message)}\n\n`);
+    };
+
+    console.log("Launching Puppeteer...");
     const browser = await puppeteer.launch({
       headless: process.env.HEADLESS !== "false",
       args: [
@@ -33,6 +42,7 @@ const scrapeLogic = async (res) => {
     );
 
     console.log("Navigating to the login page...");
+    sendEvent({ status: "Navigating to the login page..." });
     await page.goto(
       "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=<%Rand_Time>",
       { waitUntil: "domcontentloaded", timeout: 30000 }
@@ -42,58 +52,72 @@ const scrapeLogic = async (res) => {
     const initialScreenshotPath = `screenshots/step1_initial_${Date.now()}.png`;
     await page.screenshot({ path: initialScreenshotPath, fullPage: true });
     console.log(`Initial screenshot saved to: ${initialScreenshotPath}`);
+    sendEvent({ screenshot: `/screenshots/${initialScreenshotPath.split("/").pop()}` });
 
     console.log("Waiting for network stability...");
+    sendEvent({ status: "Waiting for network stability..." });
     await waitForNetworkStability(page);
 
     console.log("Filling out the login form...");
+    sendEvent({ status: "Filling out the login form..." });
     await page.waitForSelector("#accountNumber", { visible: true, timeout: 30000 });
     await page.type("#accountNumber", process.env.ACCOUNT_NUMBER, { delay: 100 });
     await page.type("#password", process.env.PASSWORD, { delay: 100 });
 
-    const loginFormScreenshotPath = `screenshots/step2_login_form_filled_${Date.now()}.png`;
     console.log("Taking screenshot of login form...");
+    const loginFormScreenshotPath = `screenshots/step2_login_form_filled_${Date.now()}.png`;
     await page.screenshot({ path: loginFormScreenshotPath, fullPage: true });
     console.log(`Login form screenshot saved to: ${loginFormScreenshotPath}`);
+    sendEvent({ screenshot: `/screenshots/${loginFormScreenshotPath.split("/").pop()}` });
 
     console.log("Clicking the login button...");
+    sendEvent({ status: "Clicking the login button..." });
     await page.evaluate(() => {
       const loginButton = document.querySelector("#amcMemberLogin");
       if (loginButton) loginButton.click();
     });
 
-    const postLoginScreenshotPath = `screenshots/step3_login_clicked_${Date.now()}.png`;
     console.log("Taking screenshot after login button clicked...");
+    const postLoginScreenshotPath = `screenshots/step3_login_clicked_${Date.now()}.png`;
     await page.screenshot({ path: postLoginScreenshotPath, fullPage: true });
     console.log(`Post-login screenshot saved to: ${postLoginScreenshotPath}`);
+    sendEvent({ screenshot: `/screenshots/${postLoginScreenshotPath.split("/").pop()}` });
 
     console.log("Waiting for login to complete...");
+    sendEvent({ status: "Waiting for login to complete..." });
     let loginComplete = false;
     try {
-      await page.waitForNavigation({ waitUntil: "networkidle0", timeout: 60000 });
+      await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 });
       loginComplete = true;
     } catch (error) {
       console.warn("Navigation timeout reached. Capturing fallback screenshot.");
+      sendEvent({ status: "Navigation timeout reached. Capturing fallback screenshot." });
     }
 
-    const afterLoginScreenshotPath = `screenshots/step4_after_login_${Date.now()}.png`;
     console.log("Taking screenshot after login...");
+    const afterLoginScreenshotPath = `screenshots/step4_after_login_${Date.now()}.png`;
     await page.screenshot({ path: afterLoginScreenshotPath, fullPage: true });
     console.log(`After-login screenshot saved to: ${afterLoginScreenshotPath}`);
+    sendEvent({ screenshot: `/screenshots/${afterLoginScreenshotPath.split("/").pop()}` });
 
     if (!loginComplete) {
       console.error("Login did not complete within the timeout.");
+      sendEvent({ status: "Login did not complete within the timeout." });
     }
 
-    const finalScreenshotPath = `screenshots/step5_final_${Date.now()}.png`;
     console.log("Taking final screenshot...");
+    const finalScreenshotPath = `screenshots/step5_final_${Date.now()}.png`;
     await page.screenshot({ path: finalScreenshotPath, fullPage: true });
     console.log(`Final screenshot saved to: ${finalScreenshotPath}`);
+    sendEvent({ screenshot: `/screenshots/${finalScreenshotPath.split("/").pop()}` });
 
-    res.send("Scraping completed successfully!");
+    console.log("Scraping completed successfully!");
+    sendEvent({ status: "Scraping completed successfully!" });
+    res.end();
   } catch (error) {
-    console.error("Error occurred during scraping:", error);
-    res.status(500).send(`Something went wrong: ${error.message}`);
+    console.error("Error occurred during scraping:", error.message);
+    sendEvent({ status: `Error occurred: ${error.message}` });
+    res.end();
   }
 };
 
@@ -116,7 +140,7 @@ const waitForNetworkStability = async (page, maxIdleTime = 10000, maxWaitTime = 
     }
     console.warn("Network stability timeout reached.");
   } finally {
-    page.off("request", onRequest); // Clean up listener
+    page.off("request", onRequest);
   }
 };
 
