@@ -51,6 +51,9 @@ const scrapeLogic = async (res) => {
       timeout: 60000,
     });
 
+    console.log("Taking initial screenshot...");
+    await page.screenshot({ path: "step1_initial.png", fullPage: true });
+
     console.log("Waiting for network stability...");
     await waitForNetworkStability(page);
 
@@ -65,7 +68,9 @@ const scrapeLogic = async (res) => {
         if (spanElement) spanElement.click();
       }
     }, flightAwardsLiSelector);
-    console.log('"Flight Awards" clicked.');
+
+    console.log('"Flight Awards" clicked. Taking screenshot...');
+    await page.screenshot({ path: "step2_flight_awards_clicked.png", fullPage: true });
 
     console.log("Waiting for network stabilization after clicking...");
     await waitForNetworkStability(page);
@@ -76,6 +81,7 @@ const scrapeLogic = async (res) => {
     console.log('Waiting for "Flight Award Reservations" link...');
     await page.waitForSelector(flightAwardReservationsSelector, { timeout: 10000 });
 
+    console.log('Clicking "Flight Award Reservations"...');
     const [newPagePromise] = await Promise.all([
       new Promise((resolve) =>
         browser.once("targetcreated", async (target) => {
@@ -87,7 +93,8 @@ const scrapeLogic = async (res) => {
     ]);
 
     const newPage = await newPagePromise;
-    console.log("Switched to the new tab.");
+    console.log("Switched to the new tab. Taking screenshot...");
+    await newPage.screenshot({ path: "step3_new_tab.png", fullPage: true });
 
     console.log("Waiting for network stabilization in the new tab...");
     await waitForNetworkStability(newPage);
@@ -104,6 +111,9 @@ const scrapeLogic = async (res) => {
       if (loginButton) loginButton.click();
     });
 
+    console.log("Taking screenshot after login button clicked...");
+    await newPage.screenshot({ path: "step4_login_attempt.png", fullPage: true });
+
     console.log("Waiting for login to complete...");
     await Promise.race([
       newPage.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 }),
@@ -111,7 +121,7 @@ const scrapeLogic = async (res) => {
     ]);
 
     console.log("Login successful. Taking a screenshot...");
-    await newPage.screenshot({ path: "after-login.png", fullPage: true });
+    await newPage.screenshot({ path: "step5_after_login.png", fullPage: true });
 
     res.send("Scraping completed successfully!");
   } catch (error) {
