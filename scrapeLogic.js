@@ -14,7 +14,7 @@ const scrapeLogic = async (res) => {
   console.log("Production environment variables loaded.");
 
   const browser = await puppeteer.launch({
-    headless: new,
+    headless: true,
     slowMo: 100,
     args: [
       "--disable-setuid-sandbox",
