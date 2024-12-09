@@ -9,13 +9,16 @@ const scrapeLogic = async (res) => {
       "--no-sandbox",
       "--single-process",
       "--no-zygote",
+      "--disable-blink-features=AutomationControlled", // Prevent detection
     ],
     executablePath:
       process.env.NODE_ENV === "production"
         ? process.env.PUPPETEER_EXECUTABLE_PATH
         : puppeteer.executablePath(),
   });
-
+  const page = await browser.newPage();
+  await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+  
   const waitForNetworkStability = async (page, maxIdleTime = 1000, maxWaitTime = 30000) => {
     let lastRequestTime = Date.now();
 
