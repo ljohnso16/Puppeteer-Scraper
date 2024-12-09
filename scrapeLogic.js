@@ -16,7 +16,7 @@ const scrapeLogic = async (res) => {
   }
 
   const browser = await puppeteer.launch({
-    headless: false, // Change to true for headless operation
+    headless: true, // Change to true for headless operation
     slowMo: 100,
     args: [
       "--disable-setuid-sandbox",
