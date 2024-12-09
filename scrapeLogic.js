@@ -45,7 +45,7 @@ const scrapeLogic = async (res) => {
 
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1080, height: 1024 });
+    //await page.setViewport({ width: 1080, height: 1024 });
 
     // Step 1: Navigate to the login page directly
     console.log("Navigating to the login page...");
@@ -53,7 +53,7 @@ const scrapeLogic = async (res) => {
       "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=<%Rand_Time>",
       {
         waitUntil: "domcontentloaded",
-        timeout: 100000,
+        timeout: 10000,
       }
     );
 
