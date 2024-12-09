@@ -10,6 +10,8 @@ const scrapeLogic = async (res) => {
       "--single-process",
       "--no-zygote",
       "--disable-blink-features=AutomationControlled", // Prevent detection
+      "--disable-dev-shm-usage",
+      "--disable-gpu",      
     ],
     executablePath:
       process.env.NODE_ENV === "production"
