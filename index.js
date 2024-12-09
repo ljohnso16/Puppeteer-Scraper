@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 1000;
 
 // Middleware to serve static files (e.g., CSS)
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public"));
 
 // Route to serve the HTML file
 app.get("/", (req, res) => {
