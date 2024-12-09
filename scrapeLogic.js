@@ -75,7 +75,7 @@ const scrapeLogic = async (res) => {
 
     // Step 2: Fill out the login form
     console.log("Filling out the login form...");
-    await page.waitForSelector("#accountNumber", { timeout: 10000 });
+    await page.waitForSelector("#accountNumber", { visible: true, timeout: 30000 });
     await page.type("#accountNumber", process.env.ACCOUNT_NUMBER, { delay: 100 });
     await page.type("#password", process.env.ACCOUNT_PASSWORD, { delay: 100 });
 
