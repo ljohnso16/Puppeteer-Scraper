@@ -26,6 +26,7 @@ app.get("/styles.css", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "styles.css"));
 });
 
+
 // Route to handle scraping
 app.get("/scrape", (req, res) => {
     console.log("Scrape endpoint hit");
