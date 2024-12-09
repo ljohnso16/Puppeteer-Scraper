@@ -32,31 +32,17 @@ const scrapeLogic = async (res) => {
     console.log('Waiting for "Flight Award Reservations" link...');
     const flightAwardReservationsSelector =
       'a[data-scclick-element="international-reserve-award_txt_flightAwardReservations"]';
-    await page.waitForSelector(flightAwardReservationsSelector, { visible: true, timeout: 5000 });
+    await page.waitForSelector(flightAwardReservationsSelector, { visible: true, timeout: 50000 });
     console.log('Clicking "Flight Award Reservations"...');
-
-    // Wait for the new tab to be created and resolve the new page
     const [newPagePromise] = await Promise.all([
-      new Promise((resolve) =>
-        browser.once("targetcreated", (target) => resolve(target.page()))
-      ),
+      new Promise((resolve) => browser.once("targetcreated", (target) => resolve(target.page()))),
       page.click(flightAwardReservationsSelector), // Click opens new tab
     ]);
-
     const newPage = await newPagePromise;
-    if (!newPage) {
-      throw new Error("Failed to find the new tab.");
-    }
     console.log("Switched to the new tab.");
-
     // Wait for the new tab to load
-    await newPage.bringToFront();
-    console.log("Waiting for the new tab to load...");
-    await newPage.waitForTimeout(3000); // Short timeout for page stabilization
-    await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 60000 });
-    console.log("New tab loaded.");
-
-    // Your further logic here...
+    await newPage.waitForTimeout(3000);
+    console.log("New tab loaded.");    
     const logStatement = "New tab loaded successfully.";
     console.log(logStatement);
     res.send(logStatement);
