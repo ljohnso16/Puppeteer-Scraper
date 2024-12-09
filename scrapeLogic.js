@@ -19,7 +19,7 @@ const scrapeLogic = async (res) => {
   const page = await browser.newPage();
   await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
-  const waitForNetworkStability = async (page, maxIdleTime = 1000, maxWaitTime = 30000) => {
+  const waitForNetworkStability = async (page, maxIdleTime = 10000, maxWaitTime = 30000) => {
     let lastRequestTime = Date.now();
 
     const onRequest = () => {
@@ -53,7 +53,7 @@ const scrapeLogic = async (res) => {
       "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=<%Rand_Time>",
       {
         waitUntil: "domcontentloaded",
-        timeout: 20000,
+        timeout: 100000,
       }
     );
 
