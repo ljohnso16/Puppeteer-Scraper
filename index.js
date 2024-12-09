@@ -15,3 +15,8 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
+
+const path = require("path");
+
+// Serve the screenshots folder
+app.use("/screenshots", express.static(path.join(__dirname, "screenshots")));
