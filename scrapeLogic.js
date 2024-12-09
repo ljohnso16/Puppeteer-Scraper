@@ -32,21 +32,6 @@ const scrapeLogic = async (res) => {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     );
 
-    // Console logging for debugging purposes
-    page.on("console", async (msg) => {
-      try {
-        const args = await Promise.all(
-          msg.args().map((arg) => arg.jsonValue().catch(() => "[unserializable]"))
-        );
-        console.log("PAGE LOG:", msg.type(), args.length ? args : msg.text());
-      } catch (error) {
-        console.warn("Error processing console message:", error.message);
-      }
-    });
-
-    page.on("request", (request) => console.log("Request URL:", request.url()));
-    page.on("response", (response) => console.log(`Response: ${response.status()} - ${response.url()}`));
-
     console.log("Navigating to the login page...");
     await page.goto(
       "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=<%Rand_Time>",
@@ -96,12 +81,10 @@ const scrapeLogic = async (res) => {
     await page.screenshot({ path: afterLoginScreenshotPath, fullPage: true });
     console.log(`After-login screenshot saved to: ${afterLoginScreenshotPath}`);
 
-    // Additional logic based on whether login was successful
     if (!loginComplete) {
       console.error("Login did not complete within the timeout.");
     }
 
-    // Add final screenshot after all attempts
     const finalScreenshotPath = `screenshots/step5_final_${Date.now()}.png`;
     console.log("Taking final screenshot...");
     await page.screenshot({ path: finalScreenshotPath, fullPage: true });
