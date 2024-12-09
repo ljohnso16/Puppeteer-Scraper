@@ -5,6 +5,7 @@ const app = express();
 
 const PORT = process.env.PORT || 1000;
 
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 // Middleware to serve static files (e.g., CSS)
 app.use(express.static("public"));
 
