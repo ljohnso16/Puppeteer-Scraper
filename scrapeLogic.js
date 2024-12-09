@@ -62,9 +62,20 @@ const scrapeLogic = async (res) => {
 
     console.log("Filling out the login form...");
     await page.waitForSelector("#accountNumber", { visible: true, timeout: 30000 });
-    await page.type("#accountNumber", process.env.ACCOUNT_NUMBER, { delay: 100 });
-    await page.type("#password", process.env.ACCOUNT_PASSWORD, { delay: 100 });
-
+    const accountNumber = process.env.ACCOUNT_NUMBER;
+    const accountPassword = process.env.PASSWORD;
+    
+    if (!accountNumber || typeof accountNumber !== 'string') {
+      throw new Error("ACCOUNT_NUMBER is not set or is not a string in the environment variables.");
+    }
+    
+    if (!accountPassword || typeof accountPassword !== 'string') {
+      throw new Error("PASSWORD is not set or is not a string in the environment variables.");
+    }
+    
+    await page.type("#accountNumber", accountNumber, { delay: 100 });
+    await page.type("#password", accountPassword, { delay: 100 });
+  
     const loginFormScreenshotPath = `screenshots/step2_login_form_filled_${Date.now()}.png`;
     console.log("Taking screenshot of login form...");
     await page.screenshot({ path: loginFormScreenshotPath, fullPage: true });
