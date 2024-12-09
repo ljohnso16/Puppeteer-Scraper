@@ -16,33 +16,33 @@ const scrapeLogic = async (res) => {
   });
   try {
     const page = await browser.newPage();
-
     await page.goto("https://www.ana.co.jp/en/jp/international/");
-
     // Set screen size
     await page.setViewport({ width: 1080, height: 1024 });
-
-    // Type into search box
-    //await page.type(".search-box__input", "automate beyond recorder");
-
     const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3']";
     await page.waitForSelector(firstSpanSelector, { timeout: 20000 });
     await page.click(firstSpanSelector);
 
-    // Wait and click on first result
-    //const searchResultSelector = ".search-box__link";
-    //await page.waitForSelector(searchResultSelector);
-    //await page.click(searchResultSelector);
+    const secondLinkSelector = 'a[data-scclick-element="international-reserve-award_txt_flightAwardReservations"]';
+    console.log(`Waiting for second element: ${secondLinkSelector}`);
+    await page.waitForSelector(secondLinkSelector, { visible: true, timeout: 5000 });
+    console.log("Clicking second element...");
+    const [newPagePromise] = await Promise.all([
+      new Promise((resolve) => browser.once("targetcreated", (target) => resolve(target.page()))),
+      page.click(secondLinkSelector),
+    ]);
+    console.log("New tab created. Switching to new tab.");
 
-    // Locate the full title with a unique string
-    const textSelector = await page.waitForSelector(
-      "Flight Award Reservations"
-    );
-    const fullTitle = await textSelector.evaluate((el) => el.textContent);
-    await page.click(textSelector);
+    const newPage = await newPagePromise;
+    console.log("Waiting for new tab to load...");
+    await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
+    console.log("New tab loaded and ready.");
 
-    // Print the full title
-    const logStatement = `The title of this blog post is ${fullTitle}`;
+    console.log("Ensuring new page is fully loaded...");
+    await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 90000 });
+    console.log("New page fully loaded.");
+    
+    const logStatement = `New page fully loaded.`;
     console.log(logStatement);
     res.send(logStatement);
   } catch (e) {
