@@ -1,9 +1,5 @@
 const puppeteer = require("puppeteer");
-
-// Ensure environment variables are loaded only if required
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
-}
+const axios = require("axios");
 
 const scrapeLogic = async (res) => {
   const accountNumber = process.env.ACCOUNT_NUMBER;
@@ -15,8 +11,10 @@ const scrapeLogic = async (res) => {
     return;
   }
 
+  console.log("Production environment variables loaded.");
+
   const browser = await puppeteer.launch({
-    headless: true, // Change to true for headless operation
+    headless: true,
     slowMo: 100,
     args: [
       "--disable-setuid-sandbox",
@@ -30,11 +28,32 @@ const scrapeLogic = async (res) => {
         : puppeteer.executablePath(),
   });
 
-  console.log("Browser launched.");
+  console.log("Browser launched in headless mode.");
 
   try {
     const page = await browser.newPage();
     console.log("New page created.");
+
+    page.on("response", async (response) => {
+      const url = response.url();
+      const headers = response.headers();
+      const contentType = headers["content-type"];
+
+      if (url.endsWith(".js") && contentType !== "application/javascript") {
+        console.warn(`Detected JavaScript file with incorrect MIME type: ${url}`);
+        try {
+          const scriptContent = (await axios.get(url)).data;
+          await page.evaluate(script => {
+            const scriptElement = document.createElement("script");
+            scriptElement.textContent = script;
+            document.head.appendChild(scriptElement);
+          }, scriptContent);
+          console.log(`Injected script from ${url}`);
+        } catch (err) {
+          console.error(`Failed to fetch or inject script from ${url}:`, err);
+        }
+      }
+    });
 
     page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
 
@@ -48,35 +67,31 @@ const scrapeLogic = async (res) => {
     console.log("Setting viewport to 1080x1024.");
     await page.setViewport({ width: 1080, height: 1024 });
 
-    // Step 1: Click the first link
     const firstSpanSelector = "li[id^='be-overseas-tertiary-tab__item3']";
     console.log(`Waiting for first element: ${firstSpanSelector}`);
     await page.waitForSelector(firstSpanSelector, { timeout: 20000 });
     console.log("First element found. Clicking it...");
     await page.click(firstSpanSelector);
 
-    // Step 2: Click the second link and handle the new tab
     const secondLinkSelector = 'a[data-scclick-element="international-reserve-award_txt_flightAwardReservations"]';
-    console.log('Waiting for "Flight Award Reservations" link...');
+    console.log(`Waiting for second element: ${secondLinkSelector}`);
     await page.waitForSelector(secondLinkSelector, { visible: true, timeout: 5000 });
-
-    console.log('Clicking "Flight Award Reservations"...');
+    console.log("Clicking second element...");
     const [newPagePromise] = await Promise.all([
       new Promise((resolve) => browser.once("targetcreated", (target) => resolve(target.page()))),
-      page.click(secondLinkSelector), // Click opens new tab
+      page.click(secondLinkSelector),
     ]);
+    console.log("New tab created. Switching to new tab.");
 
     const newPage = await newPagePromise;
-    console.log("Switched to the new tab.");
-
     console.log("Waiting for new tab to load...");
     await newPage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 });
     console.log("New tab loaded and ready.");
 
     console.log("Ensuring new page is fully loaded...");
     await newPage.waitForFunction(() => document.readyState === "complete", { timeout: 90000 });
+    console.log("New page fully loaded.");
 
-    // Step 3: Perform login
     const accountNumberSelector = "#accountNumber";
     const passwordSelector = "#password";
     const loginButtonSelector = "#amcMemberLogin";
@@ -100,7 +115,6 @@ const scrapeLogic = async (res) => {
     await newPage.waitForNavigation({ waitUntil: "networkidle0", timeout: 90000 });
     console.log("Login completed.");
 
-    // Step 4: Look for the "Multiple cities/Mixed classes" link
     const mixedClassesLinkSelector = "li.lastChild.deselection > a[role='tab']";
     console.log(`Searching for 'Multiple cities/Mixed classes' link: ${mixedClassesLinkSelector}`);
     const linkElement = await newPage.$(mixedClassesLinkSelector);
