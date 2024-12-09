@@ -18,17 +18,12 @@ const scrapeLogic = async (res) => {
   });
   const page = await browser.newPage();
   await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-  page.on("console", (msg) => {
+  page.on("console", async (msg) => {
     try {
-      const args = msg.args();
-      if (args.length > 0) {
-        // Log all arguments of the console message
-        console.log("PAGE LOG ARGS:", args.map(arg => arg._remoteObject?.value || arg.toString()));
-      } else {
-        console.log("PAGE LOG:", msg.text());
-      }
+      const args = await Promise.all(msg.args().map((arg) => arg.jsonValue().catch(() => "[unserializable]")));
+      console.log("PAGE LOG:", msg.type(), args.length ? args : msg.text());
     } catch (error) {
-      console.warn("Error logging console message:", error.message);
+      console.warn("Error processing console message:", error.message);
     }
   });
   
