@@ -1,5 +1,5 @@
 const puppeteer = require("puppeteer");
-const axios = require("axios");
+//const axios = require("axios");
 
 const scrapeLogic = async (res) => {
   const accountNumber = process.env.ACCOUNT_NUMBER;
