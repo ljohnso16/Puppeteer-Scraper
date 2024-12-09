@@ -19,6 +19,8 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+app.use(express.static(path.join(__dirname, "public")));
+
 // Debug route for static CSS (optional, ensures correct MIME type)
 app.get("/styles.css", (req, res) => {
     console.log("Serving styles.css with correct MIME type");
