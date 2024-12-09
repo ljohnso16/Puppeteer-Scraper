@@ -44,12 +44,15 @@ const scrapeLogic = async (res) => {
     const page = await browser.newPage();
     await page.setViewport({ width: 1080, height: 1024 });
 
-    // Step 1: Navigate to the first page
-    console.log("Navigating to the main page...");
-    await page.goto("https://www.ana.co.jp/en/jp/international/", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
+    // Step 1: Navigate to the login page directly
+    console.log("Navigating to the login page...");
+    await page.goto(
+      "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=",
+      {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      }
+    );
 
     console.log("Taking initial screenshot...");
     await page.screenshot({ path: "step1_initial.png", fullPage: true });
@@ -57,71 +60,32 @@ const scrapeLogic = async (res) => {
     console.log("Waiting for network stability...");
     await waitForNetworkStability(page);
 
-    // Step 2: Click "Flight Awards" tab
-    const flightAwardsLiSelector = 'li[id^="be-overseas-tertiary-tab__item3"]';
-    console.log('Clicking "Flight Awards"...');
-    await page.waitForSelector(flightAwardsLiSelector, { timeout: 10000 });
-    await page.evaluate((selector) => {
-      const liElement = document.querySelector(selector);
-      if (liElement) {
-        const spanElement = liElement.querySelector("span");
-        if (spanElement) spanElement.click();
-      }
-    }, flightAwardsLiSelector);
-
-    console.log('"Flight Awards" clicked. Taking screenshot...');
-    await page.screenshot({ path: "step2_flight_awards_clicked.png", fullPage: true });
-
-    console.log("Waiting for network stabilization after clicking...");
-    await waitForNetworkStability(page);
-
-    // Step 3: Click "Flight Award Reservations"
-    const flightAwardReservationsSelector =
-      'a[data-scclick-element="international-reserve-award_txt_flightAwardReservations"]';
-    console.log('Waiting for "Flight Award Reservations" link...');
-    await page.waitForSelector(flightAwardReservationsSelector, { timeout: 10000 });
-
-    console.log('Clicking "Flight Award Reservations"...');
-    const [newPagePromise] = await Promise.all([
-      new Promise((resolve) =>
-        browser.once("targetcreated", async (target) => {
-          const newPage = await target.page();
-          resolve(newPage);
-        })
-      ),
-      page.click(flightAwardReservationsSelector),
-    ]);
-
-    const newPage = await newPagePromise;
-    console.log("Switched to the new tab. Taking screenshot...");
-    await newPage.screenshot({ path: "step3_new_tab.png", fullPage: true });
-
-    console.log("Waiting for network stabilization in the new tab...");
-    await waitForNetworkStability(newPage);
-
-    // Step 4: Perform login
+    // Step 2: Fill out the login form
     console.log("Filling out the login form...");
-    await newPage.waitForSelector("#accountNumber", { timeout: 10000 });
-    await newPage.type("#accountNumber", process.env.ACCOUNT_NUMBER, { delay: 100 });
-    await newPage.type("#password", process.env.ACCOUNT_PASSWORD, { delay: 100 });
+    await page.waitForSelector("#accountNumber", { timeout: 10000 });
+    await page.type("#accountNumber", process.env.ACCOUNT_NUMBER, { delay: 100 });
+    await page.type("#password", process.env.ACCOUNT_PASSWORD, { delay: 100 });
+
+    console.log("Taking screenshot of login form...");
+    await page.screenshot({ path: "step2_login_form_filled.png", fullPage: true });
 
     console.log("Clicking the login button...");
-    await newPage.evaluate(() => {
+    await page.evaluate(() => {
       const loginButton = document.querySelector("#amcMemberLogin");
       if (loginButton) loginButton.click();
     });
 
     console.log("Taking screenshot after login button clicked...");
-    await newPage.screenshot({ path: "step4_login_attempt.png", fullPage: true });
+    await page.screenshot({ path: "step3_login_clicked.png", fullPage: true });
 
     console.log("Waiting for login to complete...");
     await Promise.race([
-      newPage.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 }),
-      newPage.waitForSelector("#hiddenSearchMode", { timeout: 60000 }),
+      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 }),
+      page.waitForSelector("#hiddenSearchMode", { timeout: 60000 }),
     ]);
 
     console.log("Login successful. Taking a screenshot...");
-    await newPage.screenshot({ path: "step5_after_login.png", fullPage: true });
+    await page.screenshot({ path: "step4_after_login.png", fullPage: true });
 
     res.send("Scraping completed successfully!");
   } catch (error) {
