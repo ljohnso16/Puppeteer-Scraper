@@ -18,7 +18,9 @@ const scrapeLogic = async (res) => {
   });
   const page = await browser.newPage();
   await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-
+  page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
+  page.on("request", (request) => console.log("Request URL:", request.url()));
+  page.on("response", (response) => console.log(`Response: ${response.status()} - ${response.url()}`));  
   const waitForNetworkStability = async (page, maxIdleTime = 10000, maxWaitTime = 30000) => {
     let lastRequestTime = Date.now();
 
@@ -44,8 +46,8 @@ const scrapeLogic = async (res) => {
   };
 
   try {
-    const page = await browser.newPage();
-    //await page.setViewport({ width: 1080, height: 1024 });
+    //const page = await browser.newPage();
+    await page.setViewport({ width: 1080, height: 1024 });
 
     // Step 1: Navigate to the login page directly
     console.log("Navigating to the login page...");
@@ -53,7 +55,7 @@ const scrapeLogic = async (res) => {
       "https://aswbe-i.ana.co.jp/international_asw/pages/award/search/roundtrip/award_search_roundtrip_input.xhtml?rand=<%Rand_Time>",
       {
         waitUntil: "domcontentloaded",
-        timeout: 10000,
+        timeout: 30000,
       }
     );
 
